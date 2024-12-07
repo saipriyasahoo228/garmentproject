@@ -4,7 +4,8 @@ import { Provider } from 'react-redux'; // Import Provider from react-redux
 import { ConfigProvider } from './contexts/ConfigContext';
 import './src/index.scss';
 import App from "/src/App"
-import reportWebVitals from './reportWebVitals';
+import reportWebVitals from './utils/reportWebVitals';
+
 import store from './src/store';
 
 const container = document.getElementById('root');
