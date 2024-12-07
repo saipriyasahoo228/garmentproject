@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux'; // Import Provider from react-redux
 import { ConfigProvider } from './contexts/ConfigContext';
 import './src/index.scss';
-import App from './App';
+import App from "/src/App"
 import reportWebVitals from './reportWebVitals';
 import store from './src/store';
 
