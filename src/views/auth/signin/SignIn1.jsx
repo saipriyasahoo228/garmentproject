@@ -14,12 +14,6 @@ const Signin1 = () => {
       <Breadcrumb />
       <div className="auth-wrapper">
         <div className="auth-content">
-          {/* <div className="auth-bg">
-            <span className="r" />
-            <span className="r s" />
-            <span className="r s" />
-            <span className="r" />
-          </div> */}
           <Card className="borderless text-center" style={{ 
   backgroundColor: '#d8dede', 
   backgroundImage: 'linear-gradient(315deg, #d8dede 0%, #e5bdf6 74%)', 

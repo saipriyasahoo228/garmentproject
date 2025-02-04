@@ -549,7 +549,7 @@ export default function PurchaseVoucher() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await api.get('api/purchase/purchase-entries/');
+        const response = await api.get('api/purchase/purchase-entry/');
         setItemList(response.data.data);
       } catch (error) {
         console.error('Error fetching data:', error);

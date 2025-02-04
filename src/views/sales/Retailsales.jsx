@@ -384,7 +384,7 @@ const RetailSaleForm = () => {
 
       {/* Popup (Dialog) with Retail Sale Form */}
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Retail Sale Form</DialogTitle>
+        <DialogTitle>Retail Sale & Return Form</DialogTitle>
         <DialogContent>
           <Grid container spacing={2}>
             {/* Form fields */}

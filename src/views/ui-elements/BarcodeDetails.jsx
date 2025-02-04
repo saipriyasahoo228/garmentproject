@@ -476,10 +476,9 @@ import {
   FormControl,
   InputLabel,
   Checkbox,
-  Alert
+  Alert,
 } from '@mui/material';
 import api from '../../api'; // Assumed Axios instance
-import NavRight from 'layouts/AdminLayout/NavBar/NavRight';
 
 export default function StockEntry() {
   const [barcode, setBarcode] = useState('');
@@ -496,12 +495,13 @@ export default function StockEntry() {
   const [categories, setCategories] = useState([]);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedItems, setSelectedItems] = useState([]); // Selected rows
-  const [previewModal, setPreviewModal] = useState(false); // Preview modal state
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [previewModal, setPreviewModal] = useState(false);
 
   // Fetch stock entries and categories on component mount
   useEffect(() => {
-    api.get('api/barcode/code/')
+    api
+      .get('api/barcode/code/')
       .then((response) => {
         setStockEntries(response.data.barcodes || []);
       })
@@ -509,7 +509,8 @@ export default function StockEntry() {
         console.error('Error fetching stock entries:', error);
       });
 
-    api.get('api/user/categories/')
+    api
+      .get('api/user/categories/')
       .then((response) => {
         setCategories(response.data);
         setLoading(false);
@@ -522,7 +523,8 @@ export default function StockEntry() {
 
   useEffect(() => {
     if (categoryName) {
-      api.get(`api/user/subcategories/${categoryName}`)
+      api
+        .get(`api/user/subcategories/${categoryName}`)
         .then((response) => setItems(response.data))
         .catch((error) => console.error('Error fetching items:', error));
     }
@@ -557,10 +559,11 @@ export default function StockEntry() {
       item_price: itemPrice ? parseFloat(itemPrice) : null,
       item_size: itemSize,
       shop_name: shopName,
-      category_name: categoryName
+      category_name: categoryName,
     };
 
-    api.post('api/barcode/code/', newEntry)
+    api
+      .post('api/barcode/code/', newEntry)
       .then((response) => {
         setStockEntries([...stockEntries, response.data]);
         resetForm();
@@ -580,46 +583,85 @@ export default function StockEntry() {
     setError('');
     setOpenModal(false);
   };
+  const handlePrint = () => {
+    if (selectedItems.length === 0) {
+      setError('Please select items to print.');
+      return;
+    }
+    
+    const printContent = `
+      <html>
+        <head>
+          <title>Barcode Print</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .barcode { margin: 10px 0; }
+            .barcode img { width: 200px; height: auto; }
+            .item-name { font-weight: bold; margin-bottom: 10px; }
+          </style>
+        </head>
+        <body>
+          <h1>Barcode Preview</h1>
+          ${selectedItems
+            .map(
+              (item) => `
+              <div class="barcode">
+                <div class="item-name">${item.item_name}</div>
+                <img src="data:image/png;base64,${item.barcode_image_base64}" alt="Barcode">
+              </div>
+            `
+            )
+            .join('')}
+          <script>
+            window.onload = function() {
+              window.print();
+              window.close();
+            };
+          </script>
+        </body>
+      </html>
+    `;
+  
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    printWindow.document.open();
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+  };
+  
 
   return (
     <div>
-      <Box 
-  sx={{ 
-    padding: '20px', 
-    display: 'flex', 
-    justifyContent: 'space-between', 
-    alignItems: 'center' 
-  }}
->
-  <Button 
-    onClick={() => setOpenModal(true)} 
-    variant="contained" 
-    color="secondary" 
-    sx={{ marginRight: '10px' }}
-  >
-    Add Barcode
-  </Button>
-  <Box>
-    <Button 
-      onClick={handlePreview} 
-      variant="contained" 
-      color="primary" 
-      sx={{ marginRight: '10px' }}
-    >
-      Preview
-    </Button>
-    <Button 
-      onClick={() => window.print()} 
-      variant="contained" 
-      color="secondary"
-    >
+      <Box
+        sx={{
+          padding: '20px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <Button
+          onClick={() => setOpenModal(true)}
+          variant="contained"
+          color="secondary"
+          sx={{ marginRight: '10px' }}
+        >
+          Add Barcode
+        </Button>
+        <Box>
+          <Button
+            onClick={handlePreview}
+            variant="contained"
+            color="primary"
+            sx={{ marginRight: '10px' }}
+          >
+            Preview
+          </Button>
+          <Button onClick={handlePrint} variant="contained" color="secondary">
       Print
     </Button>
-  </Box>
-  {error && <Alert severity="error" sx={{ marginTop: '10px' }}>{error}</Alert>}
-</Box>
-
-      {/* </Box> */}
+        </Box>
+        {error && <Alert severity="error" sx={{ marginTop: '10px' }}>{error}</Alert>}
+      </Box>
 
       {/* Modal for adding stock */}
       <Modal open={openModal} onClose={() => setOpenModal(false)}>
@@ -633,7 +675,7 @@ export default function StockEntry() {
             bgcolor: '#f9dff5',
             border: '2px solid #000',
             boxShadow: 24,
-            p: 4
+            p: 4,
           }}
         >
           <Typography variant="h6">Enter Stock Details</Typography>
@@ -641,7 +683,9 @@ export default function StockEntry() {
             <InputLabel>Category</InputLabel>
             <Select value={categoryName} onChange={(e) => setCategoryName(e.target.value)}>
               {categories.map((category) => (
-                <MenuItem key={category.id} value={category.category_name}>{category.category_name}</MenuItem>
+                <MenuItem key={category.id} value={category.category_name}>
+                  {category.category_name}
+                </MenuItem>
               ))}
             </Select>
           </FormControl>
@@ -649,7 +693,9 @@ export default function StockEntry() {
             <InputLabel>Item Name</InputLabel>
             <Select value={itemName} onChange={(e) => setItemName(e.target.value)}>
               {items.map((item) => (
-                <MenuItem key={item.id} value={item.name}>{item.name}</MenuItem>
+                <MenuItem key={item.id} value={item.name}>
+                  {item.name}
+                </MenuItem>
               ))}
             </Select>
           </FormControl>
@@ -700,16 +746,19 @@ export default function StockEntry() {
             bgcolor: 'background.paper',
             border: '2px solid #000',
             boxShadow: 24,
-            p: 4
+            p: 4,
           }}
         >
           <Typography variant="h6" sx={{ marginBottom: '20px' }}>
             Barcode Preview
           </Typography>
-          {stockEntries.map((item, index) => (
+          {selectedItems.map((item, index) => (
             <Box key={index} sx={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
-              {/* <img src={item.barcode_image} alt="Barcode" style={{ width: '200px', marginRight: '10px' }} /> */}
-              <Typography>{item.barcode_image}</Typography>
+              <img
+                src={`data:image/png;base64,${item.barcode_image_base64}`}
+                alt="Barcode"
+                style={{ width: '200px', marginRight: '10px' }}
+              />
               <Typography>{item.item_name}</Typography>
             </Box>
           ))}
@@ -720,20 +769,19 @@ export default function StockEntry() {
         <Table>
           <TableHead>
             <TableRow>
-            <TableCell>Select</TableCell>
+              <TableCell>Select</TableCell>
               <TableCell>SL. No</TableCell>
               <TableCell>Barcode</TableCell>
               <TableCell>Item Name</TableCell>
               <TableCell>Item Size</TableCell>
               <TableCell>Shop Name</TableCell>
               <TableCell>Category Name</TableCell>
-              
             </TableRow>
           </TableHead>
           <TableBody>
             {stockEntries.map((entry, index) => (
               <TableRow key={entry.id}>
-                 <TableCell>
+                <TableCell>
                   <Checkbox
                     onChange={(e) => handleCheckboxChange(e, entry)}
                     checked={selectedItems.includes(entry)}
@@ -745,7 +793,6 @@ export default function StockEntry() {
                 <TableCell>{entry.item_size}</TableCell>
                 <TableCell>{entry.shop_name}</TableCell>
                 <TableCell>{entry.category_name}</TableCell>
-               
               </TableRow>
             ))}
           </TableBody>

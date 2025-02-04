@@ -22,27 +22,45 @@ import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'; // PDF icon
 import DescriptionIcon from '@mui/icons-material/Description'; // Excel icon
+import api from "../../api";
 
 const SalesReports = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [saleType, setSaleType] = useState('');
   const [exportFormat, setExportFormat] = useState('');
-  const [reportData] = useState([
-    { id: 1, date: '2024-09-01', itemType: 'Retail Sale', category: 'Electronics', amount: 2000, quantity: 5 },
-    { id: 2, date: '2024-09-05', itemType: 'Bulk Sale', category: 'Clothing', amount: 1500, quantity: 3 },
-    { id: 3, date: '2024-09-10', itemType: 'Retail Sale', category: 'Furniture', amount: 3000, quantity: 2 },
-    { id: 4, date: '2024-09-12', itemType: 'Bulk Sale', category: 'Stationery', amount: 800, quantity: 10 },
-    { id: 5, date: '2024-09-15', itemType: 'Retail Sale', category: 'Electronics', amount: 2200, quantity: 4 },
-    { id: 6, date: '2024-09-20', itemType: 'Bulk Sale', category: 'Clothing', amount: 1800, quantity: 6 },
-  ]);
-
-  const [filteredData, setFilteredData] = useState(reportData);
+  const [reportData, setReportData] = useState([]);
+  const [totalSum, setTotalSum] = useState(0);
+  const [filteredData, setFilteredData] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [order, setOrder] = useState('asc');
   const [orderBy, setOrderBy] = useState('date');
 
+  // Function to fetch the filtered report from API
+  const fetchReport = async () => {
+    try {
+      const requestData = {
+        start_date: startDate || null, // Pass null if no start date is provided
+        end_date: endDate || null,    // Pass null if no end date is provided
+        sale_type: saleType || null,  // Pass null if no sale type is provided
+      };
+
+      const response = await api.post('api/retailsale/sales-report/', requestData, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      setReportData(response.data.report || []);
+      setTotalSum(response.data.total_sum || 0);
+      setFilteredData(response.data.report || []);
+    } catch (error) {
+      console.error('Error fetching sales report:', error);
+    }
+  };
+
+  // Handle PDF export
   const handleExportPDF = () => {
     if (filteredData.length === 0) {
       alert("No data to export");
@@ -52,12 +70,13 @@ const SalesReports = () => {
     doc.text("Sales Report", 14, 10);
     doc.autoTable({
       head: [['Date', 'Item Type', 'Category', 'Amount', 'Quantity']],
-      body: filteredData.map(row => [row.date, row.itemType, row.category, row.amount.toFixed(2), row.quantity]),
+      body: filteredData.map(row => [row.date, row.sale_type, row.category, row.total_amount.toFixed(2), row.total_unit]),
       startY: 20,
     });
     doc.save('sales_report.pdf');
   };
 
+  // Handle Excel export
   const handleExportExcel = () => {
     if (filteredData.length === 0) {
       alert("No data to export");
@@ -65,18 +84,18 @@ const SalesReports = () => {
     }
     const ws = XLSX.utils.json_to_sheet(filteredData.map(row => ({
       'Date': row.date,
-      'Item Type': row.itemType,
+      'Sale Type': row.sale_type,
       'Category': row.category,
-      'Amount': row.amount.toFixed(2),
-      'Quantity': row.quantity,
+      'Amount': row.total_amount.toFixed(2),
+      'Quantity': row.total_unit,
     })));
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Sale Tax Report');
-
     XLSX.writeFile(wb, 'sale_report.xlsx');
   };
 
+  // Handle export format change
   const handleExportChange = (event) => {
     setExportFormat(event.target.value);
     if (event.target.value === 'pdf') {
@@ -86,24 +105,14 @@ const SalesReports = () => {
     }
   };
 
-  const filterData = () => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const filtered = reportData.filter(row => {
-      const rowDate = new Date(row.date);
-      const dateMatch = (!startDate || rowDate >= start) && (!endDate || rowDate <= end);
-      const saleMatch = !saleType || row.itemType === saleType;
-      return dateMatch && saleMatch;
-    });
-    setFilteredData(filtered);
-  };
-
+  // Sorting data
   const handleRequestSort = (property) => {
     const isAsc = orderBy === property && order === 'asc';
     setOrder(isAsc ? 'desc' : 'asc');
     setOrderBy(property);
   };
 
+  // Sorting data by the selected column
   const sortedData = filteredData.slice().sort((a, b) => {
     if (a[orderBy] < b[orderBy]) {
       return order === 'asc' ? -1 : 1;
@@ -114,8 +123,9 @@ const SalesReports = () => {
     return 0;
   });
 
+  // Pagination logic
   useEffect(() => {
-    filterData();
+    fetchReport();
   }, [startDate, endDate, saleType]);
 
   return (
@@ -164,8 +174,8 @@ const SalesReports = () => {
               renderValue={() => (saleType ? saleType : "Select Sale Type")}
             >
               <MenuItem value="">All Types</MenuItem>
-              <MenuItem value="Retail Sale">Retail Sale</MenuItem>
-              <MenuItem value="Bulk Sale">Bulk Sale</MenuItem>
+              <MenuItem value="RetailSale">Retail Sale</MenuItem>
+              <MenuItem value="BulkSale">Bulk Sale</MenuItem>
             </Select>
           </FormControl>
 
@@ -192,25 +202,25 @@ const SalesReports = () => {
         {/* Report Table */}
         {sortedData.length > 0 && (
           <>
-            <TableContainer component={Paper} sx={{ marginTop: 4 ,backgroundColor:'#f4c4ec'}}>
+            <TableContainer component={Paper} sx={{ marginTop: 4, backgroundColor: '#f4c4ec' }}>
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell onClick={() => handleRequestSort('date')} sx={{cursor: 'pointer',backgroundColor:'#ea8cdb',fontStyle:'bold',color:'purple'}}><strong>Date</strong></TableCell>
-                    <TableCell onClick={() => handleRequestSort('itemType')} sx={{cursor: 'pointer',backgroundColor:'#ea8cdb',fontStyle:'bold',color:'purple'}}><strong>Item Type</strong></TableCell>
-                    <TableCell onClick={() => handleRequestSort('category')} sx={{cursor: 'pointer',backgroundColor:'#ea8cdb',fontStyle:'bold',color:'purple'}}><strong>Category</strong></TableCell>
-                    <TableCell align="right" onClick={() => handleRequestSort('amount')} sx={{cursor: 'pointer',backgroundColor:'#ea8cdb',fontStyle:'bold',color:'purple'}}><strong>Amount</strong></TableCell>
-                    <TableCell align="right" onClick={() => handleRequestSort('quantity')} sx={{cursor: 'pointer',backgroundColor:'#ea8cdb',fontStyle:'bold',color:'purple'}}><strong>Quantity</strong></TableCell>
+                    <TableCell onClick={() => handleRequestSort('date')} sx={{ cursor: 'pointer', backgroundColor: '#ea8cdb', fontWeight: 'bold', color: 'purple' }}><strong>Date</strong></TableCell>
+                    <TableCell onClick={() => handleRequestSort('sale_type')} sx={{ cursor: 'pointer', backgroundColor: '#ea8cdb', fontWeight: 'bold', color: 'purple' }}><strong>Sale Type</strong></TableCell>
+                    <TableCell onClick={() => handleRequestSort('category')} sx={{ cursor: 'pointer', backgroundColor: '#ea8cdb', fontWeight: 'bold', color: 'purple' }}><strong>Category</strong></TableCell>
+                    <TableCell align="right" onClick={() => handleRequestSort('total_amount')} sx={{ cursor: 'pointer', backgroundColor: '#ea8cdb', fontWeight: 'bold', color: 'purple' }}><strong>Amount</strong></TableCell>
+                    <TableCell align="right" onClick={() => handleRequestSort('total_unit')} sx={{ cursor: 'pointer', backgroundColor: '#ea8cdb', fontWeight: 'bold', color: 'purple' }}><strong>Quantity</strong></TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {sortedData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => (
-                    <TableRow key={row.id}>
+                    <TableRow key={row.date}>
                       <TableCell>{row.date}</TableCell>
-                      <TableCell>{row.itemType}</TableCell>
+                      <TableCell>{row.sale_type}</TableCell>
                       <TableCell>{row.category}</TableCell>
-                      <TableCell align="right">{row.amount.toFixed(2)}</TableCell>
-                      <TableCell align="right">{row.quantity}</TableCell>
+                      <TableCell align="right">{parseFloat(row.total_amount).toFixed(2)}</TableCell>
+                      <TableCell align="right">{row.total_unit}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -231,6 +241,12 @@ const SalesReports = () => {
               }}
               sx={{ marginTop: 2 }}
             />
+            {/* Total Sum */}
+    <Box sx={{ textAlign: 'right', marginTop: 2, padding: 2 }}>
+      <Typography variant="h6" color="purple">
+        Total Sum: ${parseFloat(totalSum).toFixed(2)}
+      </Typography>
+    </Box>
           </>
         )}
         {sortedData.length === 0 && (
