@@ -79,11 +79,11 @@ const routes = [
         path: '/basic/purchasemaster',
         element: lazy(() => import('./views/ui-elements/PurchaseDetails'))
       },
-      {
-        exact: 'true',
-        path: '/basic/designdetails',
-        element: lazy(() => import('./views/ui-elements/basic/Designdetails'))
-      },
+      // {
+      //   exact: 'true',
+      //   path: '/basic/designdetails',
+      //   element: lazy(() => import('./views/ui-elements/basic/Designdetails'))
+      // },
       {
         exact: 'true',
         path: '/basic/partydetails',
@@ -164,11 +164,11 @@ const routes = [
         path: '/reports/customerreport',
         element: lazy(() => import('./views/reports/Customerreport'))
       },
-      {
-        exact: 'true',
-        path: '/reports/itemwisereport',
-        element: lazy(() => import('./views/reports/itemwishreport'))
-      },
+      // {
+      //   exact: 'true',
+      //   path: '/reports/itemwisereport',
+      //   element: lazy(() => import('./views/reports/itemwishreport'))
+      // },
       {
         exact: 'true',
         path: '/reports/purchasereport',

@@ -60,7 +60,10 @@ export default defineConfig(({ mode }) => {
         ]
       }
     },
-    base: API_URL,
+    build: {
+      outDir: 'build', // Change output directory from 'dist' to 'build'
+    },
+    base: "/garmentproject/",
     plugins: [react(), jsconfigPaths()]
   };
 });

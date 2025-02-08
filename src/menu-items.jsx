@@ -47,12 +47,12 @@ const menuItems = {
               url: '/basic/itemmaster'
             },
            
-            {
-              id: 'breadcrumb',
-              title: 'Design Details',
-              type: 'item',
-              url: '/basic/designdetails'
-            },
+            // {
+            //   id: 'breadcrumb',
+            //   title: 'Design Details',
+            //   type: 'item',
+            //   url: '/basic/designdetails'
+            // },
             {
               id: 'collapse',
               title: 'Party Details',
@@ -182,12 +182,12 @@ const menuItems = {
               type: 'item',
               url: '/reports/customerreport'
             },
-            {
-              id: 'tabs-pills',
-              title: 'Item Report',
-              type: 'item',
-              url: '/reports/itemwisereport'
-            },
+            // {
+            //   id: 'tabs-pills',
+            //   title: 'Item Report',
+            //   type: 'item',
+            //   url: '/reports/itemwisereport'
+            // },
             {
               id: 'typography',
               title: 'Purchase Report',

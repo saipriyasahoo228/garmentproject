@@ -32,7 +32,7 @@ export default function TaxDetails() {
       setLoading({ ...loading, fetch: true });
       const response = await api.get('/api/user/taxes/'); // Replace with your API endpoint
       setTaxList(response.data.data);
-      alert(response.data.message);
+      //alert(response.data.message);
     } catch (error) {
       console.error("Error fetching tax list", error);
     } finally {
