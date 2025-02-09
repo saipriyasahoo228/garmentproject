@@ -47,12 +47,7 @@ const menuItems = {
               url: '/basic/itemmaster'
             },
            
-            // {
-            //   id: 'breadcrumb',
-            //   title: 'Design Details',
-            //   type: 'item',
-            //   url: '/basic/designdetails'
-            // },
+            
             {
               id: 'collapse',
               title: 'Party Details',
@@ -65,12 +60,7 @@ const menuItems = {
               type: 'item',
               url: '/basic/taxdetails'
             },
-            {
-              id: 'typography',
-              title: 'User Details',
-              type: 'item',
-              url: '/basic/userdetails'
-            },
+            
             {
               id: 'typography',
               title: 'Financial Year Details',
@@ -81,6 +71,23 @@ const menuItems = {
         }
       ]
     },
+    
+    {
+      id: 'ui-forms',
+      title: 'USER ACCESS CONTROL',
+      type: 'group',
+      icon: 'feather icon-user',// ✅ User icon
+      children: [
+        {
+          id: 'typography',
+          title: 'User Master',
+          type: 'item',
+          icon: 'feather icon-user', // ✅ User icon
+          url: '/basic/userdetails'
+        },
+      ]
+    },
+    
     {
       id: 'ui-forms',
       title: 'BARCODING & PURCHASE DETAILS',

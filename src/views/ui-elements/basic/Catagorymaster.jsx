@@ -27,8 +27,8 @@ export default function SimplePaper() {
   const codeRef = useRef(null);
   const subCategoryRef = useRef(null);
   const descriptionRef = useRef(null);
+  
 
-  // Fetch data from the API when the component mounts
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -36,11 +36,11 @@ export default function SimplePaper() {
         const dataDict = response.data.reduce((acc, category) => {
           acc[category.category_code] = {
             ...category,
-            sub_category_name: category.sub_category_name.map((sub_category_name) => ({ sub_category_name })), // Transform into object format
+            sub_category_name: category.sub_category_name ?? [], // Ensure it's always an array
           };
           return acc;
         }, {});
-        // alert(response.data.message);
+  
         setCategoryList(dataDict);
       } catch (error) {
         console.error('Fetch error:', error);
@@ -51,7 +51,7 @@ export default function SimplePaper() {
   
     fetchData();
   }, []);
-
+  
 
   const handleChange = (e) => {
     setCategoryDetails({
@@ -75,15 +75,22 @@ export default function SimplePaper() {
     setOpen(false);
   };
 
-  const handleEdit = (index) => {
-    const category = categoryList[index];
+  
+
+  const handleEdit = (category) => {
     setCategoryDetails({
-      ...category,
-      sub_category_name: category.sub_category_name.join(', '), // Convert array to comma-separated string for editing
+      category_name: category.category_name || '',
+      category_code: category.category_code || '',
+      sub_category_name: Array.isArray(category.sub_category_name) 
+        ? category.sub_category_name.map(sub => sub.name).join(', ') 
+        : '',  // ✅ Ensure it's a string, even if sub_category_name is undefined
+      description: category.description || '',
     });
-    setEditIndex(index);
+  
+    setEditIndex(category.category_code);
     setOpen(true);
   };
+  
 
   const handleAddOrUpdate = async (e) => {
     e.preventDefault();
@@ -133,18 +140,39 @@ export default function SimplePaper() {
     setDeleteIndex(index);
   };
 
+  
+
   const confirmDelete = async () => {
     try {
-      await api.delete(`/api/user/categories/${categoryList[deleteIndex].category_name}/`);
-      const updatedList = categoryList.filter((_, i) => i !== deleteIndex);
-      setCategoryList(updatedList);
+      const categoryToDelete = categoryList[deleteIndex];
+  
+      if (!categoryToDelete) {
+        console.error("Error: Category not found for deletion.");
+        return;
+      }
+  
+      await api.delete(`/api/user/categories/${categoryToDelete.category_name}/`);
+  
+      // ✅ Correctly update categoryList by removing the deleted category
+      const updatedList = Object.values(categoryList).filter(
+        (category) => category.category_code !== categoryToDelete.category_code
+      );
+  
+      // ✅ Convert array back to object format
+      const updatedListAsObject = updatedList.reduce((acc, category) => {
+        acc[category.category_code] = category;
+        return acc;
+      }, {});
+  
+      setCategoryList(updatedListAsObject);
       alert("Category deleted successfully!");
     } catch (error) {
-      console.error('Error deleting category:', error);
+      console.error("Error deleting category:", error);
     } finally {
       setDeleteDialogOpen(false);
     }
   };
+  
 
   const handleDeleteCancel = () => {
     setDeleteDialogOpen(false);
@@ -244,26 +272,22 @@ export default function SimplePaper() {
     <TableRow key={category.category_code}>
       <TableCell>{category.category_name}</TableCell>
       <TableCell>{category.category_code}</TableCell>
-
 <TableCell style={{ width: '350px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
   {Array.isArray(category.sub_category_name) && category.sub_category_name.length > 0
     ? category.sub_category_name
-        .map((sub) => sub?.sub_category_name?.name || "Unnamed Subcategory") // Safely access `name`
+        .map((sub) => sub?.name || "Unnamed Subcategory") // ✅ Corrected this part
         .join(", ")
     : "No Subcategories"}
 </TableCell>
 
 
-
-
-      
-
-
       <TableCell>{category.description}</TableCell>
       <TableCell>
-        <IconButton color="secondary" onClick={() => handleEdit(category.category_code)}>
-          <Edit />
-        </IconButton>
+       
+        <IconButton color="secondary" onClick={() => handleEdit(category)}>
+  <Edit />
+</IconButton>
+
         <IconButton color="error" onClick={() => handleDelete(category.category_code)}>
           <Delete />
         </IconButton>
@@ -272,8 +296,6 @@ export default function SimplePaper() {
      
   ))}
 </TableBody>
-
-
           </Table>
         </TableContainer>
       )}
@@ -287,10 +309,10 @@ export default function SimplePaper() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDeleteCancel} color="secondary">
-            Cancel
+            CANCEL
           </Button>
           <Button onClick={confirmDelete} color="error">
-            Confirm
+            CONFIRM
           </Button>
         </DialogActions>
       </Dialog>

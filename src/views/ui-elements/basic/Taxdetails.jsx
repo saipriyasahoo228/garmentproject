@@ -225,10 +225,10 @@ export default function TaxDetails() {
                 <TableCell>{tax.tax_percentage}</TableCell>
                 <TableCell>{tax.description}</TableCell>
                 <TableCell>
-                  <IconButton color="primary" onClick={() => handleEdit(index)}>
+                  <IconButton color="secondary" onClick={() => handleEdit(index)}>
                     <Edit />
                   </IconButton>
-                  <IconButton color="secondary" onClick={() => handleDeleteConfirmation(index)}>
+                  <IconButton color="error" onClick={() => handleDeleteConfirmation(index)}>
                     <Delete />
                   </IconButton>
                 </TableCell>
