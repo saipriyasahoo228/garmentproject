@@ -1,12 +1,14 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { AddCircle, RemoveCircle } from "@mui/icons-material";
+import { AddCircle, RemoveCircle,Download } from "@mui/icons-material";
 import {
   TextField, Button, Box, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Paper,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, MenuItem, Select, InputLabel, FormControl
 } from '@mui/material';
 import { Edit, Delete } from '@mui/icons-material';
 import api from "../../../api"; // Ensure to import your API instance
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 
 export default function ItemMaster() {
   const [itemDetails, setItemDetails] = useState({
@@ -189,6 +191,37 @@ export default function ItemMaster() {
       return { ...prevState, sizes: updatedSizes };
     });
   };
+
+
+  
+
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    doc.text("Item List Report", 14, 15);
+  
+    itemList.forEach((item, index) => {
+      // Main Table with Numbering
+      doc.autoTable({
+        startY: doc.autoTable.previous.finalY ? doc.autoTable.previous.finalY + 10 : 20,
+        head: [["#", "Item Name", "Item Code", "Category", "Sub-Category", "HSN Code", "Description"]],
+        body: [[index + 1, item.item_name, item.item_code, item.category_name, item.sub_category, item.hsn_code, item.description]],
+        theme: "striped",
+      });
+  
+      // Nested Stock Table with Numbering
+      doc.autoTable({
+        startY: doc.autoTable.previous.finalY + 5,
+        head: [["#", "Size", "Unit Price", "Stock Quantity"]],
+        body: item.sizes.map((size, sizeIndex) => [sizeIndex + 1, size.size, size.unit_price, size.stock_quantity]),
+        theme: "grid",
+        styles: { cellPadding: 2, fontSize: 10 },
+      });
+    });
+  
+    doc.save("Item_List.pdf");
+  };
+  
+
   
 
   return (
@@ -196,6 +229,17 @@ export default function ItemMaster() {
       <Button variant="contained" color="secondary" onClick={handleClickOpen}>
         Add Item
       </Button>
+
+      <Box sx={{ position: "absolute", top: 65, right: 60 }}>
+  <Button 
+    variant="contained" 
+    startIcon={<Download />} 
+    onClick={generatePDF} 
+    sx={{ backgroundColor: "#800080", color: "white", "&:hover": { backgroundColor: "#6a006a" } }}
+  >
+    Download PDF
+  </Button>
+</Box>
 
       <Dialog open={open} onClose={handleClose} handleClose={handleClose}
   editIndex={editIndex}

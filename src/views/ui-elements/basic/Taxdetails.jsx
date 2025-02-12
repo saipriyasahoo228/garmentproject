@@ -3,8 +3,10 @@ import {
   TextField, Button, Box, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Paper,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, MenuItem, Select, InputLabel, FormControl
 } from '@mui/material';
-import { Edit, Delete } from '@mui/icons-material';
+import { Download,Edit, Delete } from '@mui/icons-material';
 import api from "../../../api";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 
 export default function TaxDetails() {
   const [taxDetails, setTaxDetails] = useState({
@@ -137,12 +139,44 @@ export default function TaxDetails() {
     setConfirmOpen(false); // Close the confirmation dialog without deleting
   };
 
+
+  const generateTaxPDF = () => {
+    const doc = new jsPDF();
+    doc.text("Tax List Report", 14, 15); // Title
+  
+    doc.autoTable({
+      startY: 25, // Moves table closer to title
+      head: [["#", "Tax Name", "Tax Percentage", "Description"]],
+      body: (Array.isArray(taxList) ? taxList : []).map((tax, index) => [
+        index + 1,
+        tax.tax_name,
+        tax.tax_percentage + " %",
+        tax.description,
+      ]),
+      theme: "striped",
+    });
+  
+    doc.save("Tax_List.pdf");
+  };
+
   return (
     <Box sx={{ maxWidth: '100%', padding: 2 }}>
       {/* Add Tax Button */}
       <Button variant="contained" color="secondary" onClick={handleClickOpen}>
         {editIndex !== null ? 'Edit Tax' : 'Add Tax'}
       </Button>
+
+      <Box sx={{ position: "absolute", top: 65, right: 60 }}>
+            <Button 
+              variant="contained" 
+              startIcon={<Download />} 
+              onClick={generateTaxPDF} 
+              sx={{ backgroundColor: "#800080", color: "white", "&:hover": { backgroundColor: "#6a006a" } }}
+            >
+              Download PDF
+            </Button>
+          </Box>
+      
 
       {/* Dialog (Popup) Form */}
       <Dialog open={open} onClose={handleClose}>

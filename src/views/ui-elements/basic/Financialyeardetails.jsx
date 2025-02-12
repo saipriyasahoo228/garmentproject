@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 import {
   TextField, Button, Box, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Paper,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, MenuItem, Select, InputLabel, FormControl
 } from '@mui/material';
-import { Edit, Delete } from '@mui/icons-material';
+import { Edit, Delete,Download } from '@mui/icons-material';
 import api from "../../../api";
 
 export default function FinancialYearForm() {
@@ -157,11 +159,43 @@ export default function FinancialYearForm() {
     }
   };
 
+  const generateFinancialYearPDF = () => {
+    const doc = new jsPDF();
+    doc.text("Financial Year Report", 14, 15); // Title
+  
+    doc.autoTable({
+      startY: 25, // Moves table closer to the title
+      head: [["#", "Financial Year Name", "Start Date", "End Date", "Status", "Description"]],
+      body: financialYearList.map((year, index) => [
+        index + 1,
+        year.financial_year_name,
+        year.start_date,
+        year.end_date,
+        year.status ? "Active" : "Inactive",
+        year.description,
+      ]),
+      theme: "striped",
+    });
+  
+    doc.save("Financial_Year_List.pdf");
+  };
+  
+
   return (
     <Box sx={{ maxWidth: '100%', padding: 2 }}>
       <Button variant="contained" color="secondary" onClick={handleClickOpen}>
         {editIndex !== null ? 'Edit Financial Year' : 'Add Financial Year'}
       </Button>
+       <Box sx={{ position: "absolute", top: 65, right: 60 }}>
+                  <Button 
+                    variant="contained" 
+                    startIcon={<Download />} 
+                    onClick={generateFinancialYearPDF} 
+                    sx={{ backgroundColor: "#800080", color: "white", "&:hover": { backgroundColor: "#6a006a" } }}
+                  >
+                    Download PDF
+                  </Button>
+                </Box>
 
       <Dialog open={open} onClose={handleClose}>
         <DialogTitle style={{backgroundColor:'#f9dff5'}}>{editIndex !== null ? 'Edit Financial Year' : 'Add Financial Year'}</DialogTitle>

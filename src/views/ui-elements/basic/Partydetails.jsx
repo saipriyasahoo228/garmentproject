@@ -1,10 +1,13 @@
 
 import React, { useState, useRef, useEffect } from 'react';
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+
 import {
   TextField, Button, Grid, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Paper,Box,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, MenuItem, Select, InputLabel, FormControl
 } from '@mui/material';
-import { Edit, Delete } from '@mui/icons-material';
+import { Edit, Delete,Download } from '@mui/icons-material';
 import api from "../../../api";
 
 export default function PartyReport() {
@@ -36,22 +39,19 @@ export default function PartyReport() {
   const descriptionRef = useRef(null);
   const registrationnumRef = useRef(null);
 
-  
-
-  const fetchItems = async () => {
-    try {
-        const response = await api.get('/api/user/party/'); 
+  useEffect(() => {
+    const fetchItems = async () => {
+      try {
+        const response = await api.get('/api/user/party/'); // Replace with your actual endpoint
         setPartyList(response.data.data);
-    } catch (error) {
+        // alert(response.data.message);
+      } catch (error) {
         console.error("Error fetching items:", error);
-    }
-};
+      }
+    };
 
-// Fetch data when the component mounts
-useEffect(() => {
-    fetchItems();
-}, []);
-
+    fetchItems(); // Fetch categories when component mounts
+  }, []);
 
   const handleChange = (e) => {
     setPartyDetails({
@@ -60,84 +60,56 @@ useEffect(() => {
     });
   };
 
-  // const handleClickOpen = () => {
-  //   setOpen(true); // Open the dialog when "Add Party" button is clicked
-  //   setEditIndex(null); // Reset the edit index
-  // };
-
   const handleClickOpen = () => {
-    setPartyDetails({
-        party_name: '',
-        gst_number: '',
-        registration_number: '',
-        party_type: '',
-        phone: '',
-        email: '',
-        address: '',
-        description: ''
-    }); // Reset the form
-
-    setEditIndex(null); // Ensure we are not in edit mode
-    setOpen(true); // Open the modal
-};
-
+    setOpen(true); // Open the dialog when "Add Party" button is clicked
+    setEditIndex(null); // Reset the edit index
+  };
 
   const handleClose = () => {
     setOpen(false); // Close the dialog when "Cancel" button is clicked
   };
 
+  const handleAddOrUpdate = async (e) => {
+    e.preventDefault();
+    setLoading({ ...loading, add: true });
 
-
-const handleAddOrUpdate = async (e) => {
-  e.preventDefault();
-  setLoading({ ...loading, add: true });
-
-  try {
+    try {
       if (editIndex !== null) {
-          // Update logic
-          const updatedParty = await api.put(`/api/user/party/${partyDetails.party_name}/`, partyDetails);
-          alert(updatedParty.data.message);
+        // Update logic
+        const updatedParty = await api.put(`/api/user/party/${partyDetails.party_name}/`, partyDetails);
+        const updatedList = [...partyList];
+        updatedList[editIndex] = updatedParty.data;
+        alert(updatedParty.data.message);
+        setPartyList(updatedList);
       } else {
-          // Add logic
-          const newParty = await api.post('/api/user/party/', partyDetails);
-          alert(newParty.data.message);
+        // Add logic
+        const newParty = await api.post('/api/user/party/', partyDetails);
+        setPartyList([...partyList, newParty.data]);
+        alert(newParty.data.message);
       }
-
-      // 🔹 Fetch updated data immediately
-      await fetchItems();
-
-  } catch (error) {
+    } catch (error) {
       console.error('Error adding/updating party:', error);
-  } finally {
+    } finally {
       setLoading({ ...loading, add: false });
-
-      // Reset form and close modal
       setPartyDetails({
-          party_name: '',
-          gst_number: '',
-          registration_number: '',
-          party_type: '',
-          phone: '',
-          email: '',
-          address: '',
-          description: ''
+        party_name: '',
+        gst_number: '',
+        registration_number:'',
+        party_type: '',
+        phone: '',
+        email: '',
+        address: '',
+        description: ''
       });
-      setEditIndex(null);
-      setOpen(false); // 🔹 Close modal after submission
-  }
-};
-
-
-
- 
+      setOpen(false);
+    }
+  };
 
   const handleEdit = (index) => {
-    const selectedParty = partyList[index];
-    setPartyDetails(selectedParty); // Load selected party details
-    setEditIndex(index);  // Enable edit mode
-    setOpen(true); // Open the modal
-};
-
+    setPartyDetails(partyList[index]); // Populate form with the selected party's details
+    setEditIndex(index); // Set the index of the party being edited
+    setOpen(true); // Open the dialog to edit
+  };
 
   const handleDelete = (index) => {
     setDeleteIndex(index); // Set the index of the party to be deleted
@@ -169,15 +141,47 @@ const handleAddOrUpdate = async (e) => {
     }
   };
 
+  const generatePartyPDF = () => {
+    const doc = new jsPDF();
+    doc.text("Party List Report", 14, 15); // Title
+  
+    doc.autoTable({
+      startY: 25, // Moves table closer to the title
+      head: [["#", "Party Name", "Party Type", "Phone", "Email", "GST Number", "Registration No.", "Address"]],
+      body: partyList.map((party, index) => [
+        index + 1,
+        party.party_name,
+        party.party_type,
+        party.phone,
+        party.email,
+        party.gst_number,
+        party.registration_number,
+        party.address,
+      ]),
+      theme: "striped",
+    });
+  
+    doc.save("Party_List.pdf");
+  };
+  
+
   return (
     <Box sx={{ maxWidth: '100%', padding: 2 }}>
       {/* Add Party Button */}
-      
+      <Button variant="contained" color="secondary" onClick={handleClickOpen}>
+        {editIndex !== null ? 'Edit Party' : 'Add Party'}
+      </Button>
 
-<Button variant="contained" color="secondary" onClick={handleClickOpen}>
-    Add Party
-</Button>
-
+      <Box sx={{ position: "absolute", top: 65, right: 60 }}>
+      <Button 
+        variant="contained" 
+        startIcon={<Download />} 
+        onClick={generatePartyPDF} 
+        sx={{ backgroundColor: "#800080", color: "white", "&:hover": { backgroundColor: "#6a006a" } }}
+      >
+        Download PDF
+      </Button>
+    </Box>
 
       {/* Dialog (Popup) Form */}
       <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
@@ -318,13 +322,9 @@ const handleAddOrUpdate = async (e) => {
           <Button onClick={handleClose} color="error">
             Cancel
           </Button>
-         
           <Button onClick={handleAddOrUpdate} color="secondary" disabled={loading.add}>
-    {loading.add ? (
-        <CircularProgress size={24} />
-    ) : editIndex !== null ? 'Update' : 'Submit'}  
-</Button>
-
+            {loading.add ? <CircularProgress size={24} /> : 'Submit'}
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -335,11 +335,11 @@ const handleAddOrUpdate = async (e) => {
           Are you sure you want to delete this party?
         </DialogContent>
         <DialogActions>
-          <Button onClick={cancelDelete} color="secondary">
-            CANCEL
+          <Button onClick={cancelDelete} color="error">
+            No
           </Button>
-          <Button onClick={confirmDelete} color="error">
-            CONFIRM
+          <Button onClick={confirmDelete} color="secondary">
+            Yes
           </Button>
         </DialogActions>
       </Dialog>

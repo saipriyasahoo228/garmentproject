@@ -5,8 +5,9 @@ import {
   DialogTitle, Paper, Table, TableBody, TableCell, TableContainer, TableHead,
   TableRow, IconButton, DialogContentText
 } from '@mui/material';
-import { Edit, Delete } from '@mui/icons-material';
+import { Edit, Delete ,Download} from '@mui/icons-material';
 import api from "../../../api";
+import "jspdf-autotable";
 
 export default function SimplePaper() {
   const [categoryDetails, setCategoryDetails] = useState({
@@ -185,8 +186,47 @@ export default function SimplePaper() {
     }
   };
 
+  const downloadPDF = () => {
+    const doc = new jsPDF();
+    doc.text("Category List", 14, 15);
+
+    const tableColumn = ["Category Name", "Category Code", "Sub-Category Names", "Description"];
+    const tableRows = Object.values(categoryList).map(category => [
+      category.category_name,
+      category.category_code,
+      Array.isArray(category.sub_category_name) && category.sub_category_name.length > 0
+        ? category.sub_category_name.map(sub => sub?.name || "Unnamed Subcategory").join(", ")
+        : "No Subcategories",
+      category.description
+    ]);
+
+    doc.autoTable({
+      head: [tableColumn],
+      body: tableRows,
+      startY: 25
+    });
+
+    doc.save("category_list.pdf");
+  };
+
+
   return (
     <Box sx={{ maxWidth: '100%', padding: 2 }}>
+
+<Button 
+        variant="contained" 
+        startIcon={<Download />} 
+        onClick={downloadPDF}
+        sx={{ 
+          position: "absolute", 
+          right: 20, 
+          top: 75,  // Adjusted for better placement
+          backgroundColor: "purple", 
+          "&:hover": { backgroundColor: "darkviolet" } 
+        }}
+      >
+        Download PDF
+      </Button>
       <Button variant="contained" color="secondary" onClick={handleClickOpen}>
         {editIndex !== null ? 'Edit Category' : 'Add Category'}
       </Button>

@@ -1,8 +1,11 @@
 
+
 import React, { useState, useRef, useEffect } from 'react';
 import { TextField, Button, Box,Grid, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton } from '@mui/material';
-import { Edit, Delete } from '@mui/icons-material';
+import { Edit, Delete ,Download} from '@mui/icons-material';
 import api from "../../../api";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 
 export default function SimplePaper() {
   const [companyDetails, setCompanyDetails] = useState({
@@ -28,46 +31,26 @@ export default function SimplePaper() {
   const addressRef = useRef(null);
 
   // Fetch company list on component mount
-  // useEffect(() => {
-  //   const fetchCompanyList = async () => {
-  //     setLoading((prevLoading) => ({ ...prevLoading, fetch: true }));
-  //     try {
-  //       const response = await api.get('/api/user/companies'); // Adjust endpoint as needed
-  //       console.log("Fetched Company List Response:", response.data);
-  //       //alert("Fetched Company List Response:", response.data);
-        
-  //       // Use response.data.data to get the array of companies
-  //       setCompanyList(Array.isArray(response.data.data) ? response.data.data : []);
-  //     } catch (error) {
-  //       console.error("Error fetching companies:", error);
-
-  //     } finally {
-  //       setLoading((prevLoading) => ({ ...prevLoading, fetch: false }));
-  //     }
-  //   };
-
-  //   fetchCompanyList();
-  // }, []);
-
-  const fetchCompanyList = async () => {
-    setLoading((prevLoading) => ({ ...prevLoading, fetch: true }));
-    try {
+  useEffect(() => {
+    const fetchCompanyList = async () => {
+      setLoading((prevLoading) => ({ ...prevLoading, fetch: true }));
+      try {
         const response = await api.get('/api/user/companies'); // Adjust endpoint as needed
         console.log("Fetched Company List Response:", response.data);
+        //alert("Fetched Company List Response:", response.data);
         
         // Use response.data.data to get the array of companies
         setCompanyList(Array.isArray(response.data.data) ? response.data.data : []);
-    } catch (error) {
+      } catch (error) {
         console.error("Error fetching companies:", error);
-    } finally {
-        setLoading((prevLoading) => ({ ...prevLoading, fetch: false }));
-    }
-};
 
-// 🔹 Call fetchCompanyList in useEffect on mount
-useEffect(() => {
+      } finally {
+        setLoading((prevLoading) => ({ ...prevLoading, fetch: false }));
+      }
+    };
+
     fetchCompanyList();
-}, []);
+  }, []);
 
 
   const handleChange = (e) => {
@@ -86,138 +69,55 @@ useEffect(() => {
     setOpen(false);
   };
 
-  // const handleAddOrUpdate = async (e) => {
-  //   e.preventDefault();
-  //   setLoading((prevLoading) => ({ ...prevLoading, add: true }));
-  //   try {
-  //     if (editIndex !== null) {
-  //       // Update company
-  //       await api.put(`/api/user/companies/${companyDetails.gst}/`, companyDetails);
-  //       const updatedList = [...companyList];
-  //       updatedList[editIndex] = companyDetails;
-  //       setCompanyList(updatedList);
-  //       alert(updatedList.message);
-  //     } else {
-  //       // Add new company
-  //       const response = await api.post('/api/user/companies/', companyDetails);
-  //       setCompanyList((prevList) => [...prevList, response.data]);
-  //       alert(response.data.message);
-  //     }
-  //   } catch (error ) {
-  //     console.error("Error adding/updating company", error);
-  //     alert(responce.data.error);
-  //   } finally {
-  //     setLoading((prevLoading) => ({ ...prevLoading, add: false }));
-  //     setCompanyDetails({
-  //       company_name: '',
-  //       pan:'',
-  //       gst: '',
-  //       phone: '',
-  //       email: '',
-  //       address: ''
-  //     });
-  //     setOpen(false);
-  //   }
-  // };
-//   const handleAddOrUpdate = async (e) => {
-//     e.preventDefault();
-//     setLoading((prevLoading) => ({ ...prevLoading, add: true }));
-//     try {
-//         if (editIndex !== null) {
-//             // Update company
-//             const response = await api.put(`/api/user/companies/${companyDetails.gst}/`, companyDetails);
-//             const updatedList = [...companyList];
-//             updatedList[editIndex] = response.data;
-//             setCompanyList(updatedList);
-//             alert(response.data.message || "Company updated successfully");
-//         } else {
-//             // Add new company
-//             const response = await api.post('/api/user/companies/', companyDetails);
-//             setCompanyList((prevList) => [...prevList, response.data]);
-//             alert(response.data.message || "Company added successfully");
-//         }
-//     } catch (error) {
-//         console.error("Error adding/updating company:", error);
+  
+  const handleAddOrUpdate = async (e) => {
+    e.preventDefault();
+    setLoading((prevLoading) => ({ ...prevLoading, add: true }));
+    try {
+        if (editIndex !== null) {
+            // Update company
+            const response = await api.put(`/api/user/companies/${companyDetails.gst}/`, companyDetails);
+            const updatedList = [...companyList];
+            updatedList[editIndex] = response.data;
+            setCompanyList(updatedList);
+            alert(response.data.message || "Company updated successfully");
+        } else {
+            // Add new company
+            const response = await api.post('/api/user/companies/', companyDetails);
+            setCompanyList((prevList) => [...prevList, response.data]);
+            alert(response.data.message || "Company added successfully");
+        }
+    } catch (error) {
+        console.error("Error adding/updating company:", error);
 
-//         if (error.response && error.response.data && error.response.data.error) {
-//             const errorDetails = error.response.data.error;
-//             let errorMessages = '';
+        if (error.response && error.response.data && error.response.data.error) {
+            const errorDetails = error.response.data.error;
+            let errorMessages = '';
 
-//             // Loop through the error details to construct a readable message
-//             for (const [field, messages] of Object.entries(errorDetails)) {
-//                 errorMessages += `${field.toUpperCase()}: ${messages.join(", ")}\n`;
-//             }
+            // Loop through the error details to construct a readable message
+            for (const [field, messages] of Object.entries(errorDetails)) {
+                errorMessages += `${field.toUpperCase()}: ${messages.join(", ")}\n`;
+            }
 
-//             alert(`Validation Errors:\n${errorMessages}`);
-//         } else if (error.message) {
-//             alert(`Error: ${error.message}`); // General error
-//         } else {
-//             alert("An unknown error occurred."); // Fallback error message
-//         }
-//     } finally {
-//         setLoading((prevLoading) => ({ ...prevLoading, add: false }));
-//         setCompanyDetails({
-//             company_name: '',
-//             pan: '',
-//             gst: '',
-//             phone: '',
-//             email: '',
-//             address: ''
-//         });
-//         setOpen(false);
-//     }
-// };
-
-const handleAddOrUpdate = async (e) => {
-  e.preventDefault();
-  setLoading((prevLoading) => ({ ...prevLoading, add: true }));
-
-  try {
-      if (editIndex !== null) {
-          // Update company
-          const response = await api.put(`/api/user/companies/${companyDetails.gst}/`, companyDetails);
-          alert(response.data.message || "Company updated successfully");
-      } else {
-          // Add new company
-          const response = await api.post('/api/user/companies/', companyDetails);
-          alert(response.data.message || "Company added successfully");
-      }
-
-      // 🔹 Fetch updated data immediately
-      await fetchCompanyList();
-
-  } catch (error) {
-      console.error("Error adding/updating company:", error);
-
-      if (error.response && error.response.data && error.response.data.error) {
-          const errorDetails = error.response.data.error;
-          let errorMessages = '';
-
-          // Loop through the error details to construct a readable message
-          for (const [field, messages] of Object.entries(errorDetails)) {
-              errorMessages += `${field.toUpperCase()}: ${messages.join(", ")}\n`;
-          }
-
-          alert(`Validation Errors:\n${errorMessages}`);
-      } else if (error.message) {
-          alert(`Error: ${error.message}`); // General error
-      } else {
-          alert("An unknown error occurred."); // Fallback error message
-      }
-  } finally {
-      setLoading((prevLoading) => ({ ...prevLoading, add: false }));
-      setCompanyDetails({
-          company_name: '',
-          pan: '',
-          gst: '',
-          phone: '',
-          email: '',
-          address: ''
-      });
-      setOpen(false);
-  }
+            alert(`Validation Errors:\n${errorMessages}`);
+        } else if (error.message) {
+            alert(`Error: ${error.message}`); // General error
+        } else {
+            alert("An unknown error occurred."); // Fallback error message
+        }
+    } finally {
+        setLoading((prevLoading) => ({ ...prevLoading, add: false }));
+        setCompanyDetails({
+            company_name: '',
+            pan: '',
+            gst: '',
+            phone: '',
+            email: '',
+            address: ''
+        });
+        setOpen(false);
+    }
 };
-
 
 
   const handleEdit = (index) => {
@@ -261,8 +161,48 @@ const handleAddOrUpdate = async (e) => {
     }
   };
 
+  const downloadPDF = () => {
+    const doc = new jsPDF();
+    doc.text("Company List", 14, 15);
+    
+    const tableColumn = ["Company Name", "GST", "Phone", "PAN", "Email", "Address"];
+    const tableRows = companyList.map(company => [
+      company.company_name,
+      company.gst,
+      company.phone,
+      company.pan,
+      company.email,
+      company.address
+    ]);
+
+    doc.autoTable({
+      head: [tableColumn],
+      body: tableRows,
+      startY: 20
+    });
+
+    doc.save("company_list.pdf");
+  };
+
+
   return (
     <Box sx={{ maxWidth: '100%', padding: 2 }}>
+
+     <Button 
+        variant="contained" 
+        color="primary" 
+        startIcon={<Download />} 
+        onClick={downloadPDF}
+        sx={{ 
+          position: "absolute", 
+          right: 16, 
+          top: 75,  // Adjusted from 16 to 32 to move it down
+          backgroundColor: "purple", 
+          "&:hover": { backgroundColor: "darkviolet" } 
+        }}
+      >
+        Download PDF
+      </Button>
       <Button variant="contained" color="secondary" onClick={handleClickOpen}>
         {editIndex !== null ? 'Edit Company' : 'Add Company'}
       </Button>
